@@ -1,0 +1,243 @@
+ Calling between Android Java methods and WebView JavaScript, with @JavascriptInterface
+This example to embed HTML in Android app using WebView. it's the updated version of the former exercise "Call JavaScript inside WebView from Android activity, with parameter passed".
+
+It demonstrate how to call JavaScript function in HTML from Android Java code (the EditText), call Android Java methods with @JavascriptInterface from HTML JavaScript (the first "Say hello" and "Open Dialog" buttons).
+
+For applications targeted to API level JELLY_BEAN_MR1 and above, only public methods that are annotated with JavascriptInterface can be accessed from JavaScript. For applications targeted to API level JELLY_BEAN or below, all public methods (including the inherited ones) can be accessed. This example also show Android Java method without @JavascriptInterface (called from the second "Say hello" button), and non-public method (called from second "Open Dialog" button) cannot be accessed from Javascript.
+
+
+
+Create a Android Project using Project Wizard in Android-Eclipse, to generate a default MainActivity extends ActionBarActivity. Implement MyJavaScriptInterface class, its public method with @JavascriptInterface can be called from Javascript. Modify the onCreateView() method of PlaceholderFragment() class to embed our HTML.
+
+MainActivity.java
+
+package com.example.androidbrowser;
+
+import android.support.v7.app.ActionBarActivity;
+import android.support.v4.app.Fragment;
+import android.app.AlertDialog;
+import android.content.Context;
+import android.os.Bundle;
+import android.view.LayoutInflater;
+import android.view.Menu;
+import android.view.MenuItem;
+import android.view.View;
+import android.view.ViewGroup;
+import android.webkit.JavascriptInterface;
+import android.webkit.WebView;
+import android.widget.Button;
+import android.widget.EditText;
+import android.widget.Toast;
+
+public class MainActivity extends ActionBarActivity {
+
+ @Override
+ protected void onCreate(Bundle savedInstanceState) {
+  super.onCreate(savedInstanceState);
+  setContentView(R.layout.activity_main);
+
+  if (savedInstanceState == null) {
+   getSupportFragmentManager().beginTransaction()
+     .add(R.id.container, new PlaceholderFragment()).commit();
+  }
+ }
+
+ @Override
+ public boolean onCreateOptionsMenu(Menu menu) {
+
+  // Inflate the menu; this adds items to the action bar if it is present.
+  getMenuInflater().inflate(R.menu.main, menu);
+  return true;
+ }
+
+ @Override
+ public boolean onOptionsItemSelected(MenuItem item) {
+  // Handle action bar item clicks here. The action bar will
+  // automatically handle clicks on the Home/Up button, so long
+  // as you specify a parent activity in AndroidManifest.xml.
+  int id = item.getItemId();
+  if (id == R.id.action_settings) {
+   return true;
+  }
+  return super.onOptionsItemSelected(item);
+ }
+
+ /**
+  * A placeholder fragment containing a simple view.
+  */
+ public static class PlaceholderFragment extends Fragment {
+
+  WebView myBrowser;
+  EditText Msg;
+  Button btnSendMsg;
+
+  public PlaceholderFragment() {
+  }
+
+  @Override
+  public View onCreateView(LayoutInflater inflater, ViewGroup container,
+    Bundle savedInstanceState) {
+   View rootView = inflater.inflate(R.layout.fragment_main, container,
+     false);
+   //
+   myBrowser = (WebView) rootView.findViewById(R.id.mybrowser);
+
+   final MyJavaScriptInterface myJavaScriptInterface = 
+     new MyJavaScriptInterface(getActivity());
+   
+   myBrowser.addJavascriptInterface(myJavaScriptInterface,
+     "AndroidFunction");
+
+   myBrowser.getSettings().setJavaScriptEnabled(true);
+   myBrowser.loadUrl("file:///android_asset/mypage.html");
+
+   Msg = (EditText) rootView.findViewById(R.id.msg);
+   btnSendMsg = (Button) rootView.findViewById(R.id.sendmsg);
+   btnSendMsg.setOnClickListener(new Button.OnClickListener() {
+
+    @Override
+    public void onClick(View arg0) {
+     // TODO Auto-generated method stub
+     String msgToSend = Msg.getText().toString();
+     myBrowser.loadUrl("javascript:callFromActivity(\""
+       + msgToSend + "\")");
+
+    }
+   });
+
+   //
+   return rootView;
+  }
+  
+  public class MyJavaScriptInterface {
+
+   Context mContext;
+
+   MyJavaScriptInterface(Context c) {
+    mContext = c;
+   }
+
+   @JavascriptInterface
+   public void showToast(String toast) {
+    Toast.makeText(mContext, toast, Toast.LENGTH_SHORT).show();
+   }
+
+   @JavascriptInterface
+   public void openAndroidDialog() {
+    AlertDialog.Builder myDialog = new AlertDialog.Builder(mContext);
+    myDialog.setTitle("DANGER!");
+    myDialog.setMessage("You can do what you want!");
+    myDialog.setPositiveButton("ON", null);
+    myDialog.show();
+   }
+   
+   /*
+    * The following methods have no @JavascriptInterface
+    * It cannot be accessed
+    */
+   public void showToast2(String toast) {
+    Toast.makeText(mContext, toast, Toast.LENGTH_SHORT).show();
+   }
+   
+   /*
+    * The following methods not public
+    * It cannot be accessed
+    */
+   @JavascriptInterface
+   void openAndroidDialog2() {
+    AlertDialog.Builder myDialog = new AlertDialog.Builder(mContext);
+    myDialog.setTitle("DANGER!");
+    myDialog.setMessage("You can do what you want!");
+    myDialog.setPositiveButton("ON", null);
+    myDialog.show();
+   }
+
+  }
+
+ }
+
+}
+
+
+
+/res/layout/fragment_main.xml
+
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:layout_width="fill_parent"
+    android:layout_height="fill_parent"
+    android:orientation="vertical" >
+
+    <TextView
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_gravity="center_horizontal"
+        android:autoLink="web"
+        android:text="http://android-er.blogspot.com/"
+        android:textStyle="bold" />
+
+    <EditText
+        android:id="@+id/msg"
+        android:layout_width="fill_parent"
+        android:layout_height="wrap_content" />
+
+    <Button
+        android:id="@+id/sendmsg"
+        android:layout_width="fill_parent"
+        android:layout_height="wrap_content"
+        android:text="Msg to JavaScript" />
+
+    <WebView
+        android:id="@+id/mybrowser"
+        android:layout_width="fill_parent"
+        android:layout_height="fill_parent" />
+
+</LinearLayout>
+
+
+
+/assets/mypage.html, it will be loaded in WebView.
+
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width; user-scalable=0;" />
+<title>My HTML</title>
+</head>
+<body>
+<h1>MyHTML</h1>
+<p id="mytext">Hello!</p>
+<input type="button" value="Say hello" onClick="showAndroidToast('Hello Android!')" />
+<input type="button" value="Open Dialog" onClick="openAndroidDialog()" />
+<br/>
+<p>Call Java method Without @JavascriptInterface</p>
+<input type="button" value="Say hello" onClick="showAndroidToast2('Hello Android!')" />
+<br/>
+<p>Call Java method not public</p>
+<input type="button" value="Open Dialog" onClick="openAndroidDialog2()" />
+<br/>
+<script language="javascript">
+ function showAndroidToast(toast) {
+  AndroidFunction.showToast(toast);
+ }
+ 
+ function openAndroidDialog() {
+  AndroidFunction.openAndroidDialog();
+ }
+ 
+ function showAndroidToast2(toast) {
+  AndroidFunction.showToast2(toast);
+ }
+ 
+ function openAndroidDialog2() {
+  AndroidFunction.openAndroidDialog2();
+ }
+  
+   function callFromActivity(msg){
+    document.getElementById("mytext").innerHTML = msg;
+   }
+</script>
+
+</body>
+</html>
