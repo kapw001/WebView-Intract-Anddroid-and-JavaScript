@@ -1,0 +1,203 @@
+ WebView Interactions with JavaScript
+
+WebView displays web pages. But we are interested not only in web-content demonstration we want to interact with this web-content. In this article we’ll try to explain some details of this process.
+
+First of all if you want to download web pages from Internet, please do not forget about this permission in AndroidManifest file.
+
+<uses-permission Android:name="Android.permission.INTERNET" />
+
+There are several ways to set content for WebView:
+
+WebView webView = (WebView) findViewById(R.id.WebView);
+// Ex 1: set URL address:
+webView.loadUrl("https://www.android.com/");
+// Ex 2: set .html from a raw folder:
+webView.loadUrl("file:///Android_res/raw/some_file.HTML");
+// Ex 3: set .html from an asset folder:
+webView.loadUrl("file:///Android_asset/some_file.HTML");
+// Ex 4: set html content as String:
+String rawHTML = "<HTML>"+ "<body><h1>HTML content</h1></body>"+ "</HTML>";
+webView.loadData(data, "text/HTML", "UTF-8");
+
+WebSettings (class)
+
+It allows to manage settings state for a WebView. When a WebView is created for the first time, it obtains a set of default settings. These default settings will be returned from any getter call. A WebSettings object obtained from WebView.getSettings() is tied to the life of the WebView. If a WebView has been destroyed, any method call on WebSettings will throw an IllegalStateException.
+
+You should enable JavaScript with setJavaScriptEnabled() for WebSettings.
+
+WebView webSettings = WebView.getSettings();
+webSettings.setJavaScriptEnabled (boolean enable);
+
+WebViewClient
+
+It is called when the rendering of the content is performed, e.g. errors or form submissions. You can also intercept URL loading here (via shouldOverrideUrlLoading()).
+
+WebViewClient allows listening for web page events, such as when a web page begins to load, has finished loading, when there is an error related to page loading, form submission, links clicked by the end user and other events.
+
+private classMyWebViewClientextendsWebViewClient{
+   
+   @Override
+   publicbooleanshouldOverrideUrlLoading(WebView view, String url){
+      return true;
+   }
+   
+   @Override
+   publicvoidonPageFinished(WebView view, String url){
+   }
+   
+   @Override
+   publicvoidonReceivedError(WebView view, int errorCode, 
+                  String description, String failingUrl){
+      super.onReceivedError(view, errorCode, description, failingUrl);
+   }
+
+}
+
+WebViewClient implementation.
+
+Then you can set your custom WebViewClient to WebView.
+
+ webView.setWebViewClient(new MyWebViewClient());
+
+WebChromeClient
+
+WebChromeClient allows listening to JavaScript calls, notification of the current page such as console messages, alerts, progress updates of page and other JavaScript calls.
+
+We can handle JS events using WebChromeClient.
+
+private classMyWebChromeClientextendsWebChromeClient{
+
+   @Override
+   publicbooleanonJsAlert(WebView view, String url, String message, 
+final JsResult result){
+      return true;
+   }
+
+   @Override
+   publicbooleanonJsConfirm(WebView view, String url, String message,                final JsResult result){
+      return true;
+   }
+ 
+   @Override
+   publicbooleanonJsPrompt(WebView view, String url, String message, 
+               String defaultValue, final JsPromptResult result){
+      return true;
+   }
+
+}
+
+Then you can set your custom MyWebChromeClient to WebView.
+
+browser.setWebChromeClient(new MyWebChromeClient());
+
+JavaScript – Android binding
+
+WebView allows binding JavaScript code to Android code through an interface.
+
+Thereto we should use addJavaScriptInterface(JSAndroidBindingClass, "locater") and intake the JSAndroidBindingClass class and the interface named locater for accessing the Android class. This creates an interface called locater for JavaScript running in the WebView. At this point, web application has access to the JSAndroidBindingClass class.
+
+We can:
+
+1) Execute the method described in java code – from JS code.
+
+2) Execute from java code method described in JS CODE.
+
+ 
+
+- How to execute the method described in java code – from JS code
+
+Let’s describe the class with our methods, which we want to execute in JS code:
+
+public classJavaScriptInterface{
+
+   public String getNameFromAndroidET(){
+      return “some text”;
+   }
+
+}
+
+// Then we set this JavaScriptInterface class to web view.
+
+JavaScriptInterface JSAndroidBindingClass = new JavaScriptInterface();
+webView.addJavascriptInterface( JSAndroidBindingClass, "locater");
+
+For interaction with jave code in JS code we should use jsInterfaceName.
+
+<html>
+   <head>
+      <script language="javascript">
+         function getData(){
+             document.getElementById("androidEditTextContent")
+                .value = jsInterfaceName.getNameFromAndroidET();
+             var variable = ""
+             + document.getElementById("androidEditTextContent")
+             .value;
+             alert("Text in Android EditText is : " + variable);
+          }
+      </script>
+   </head>
+   <body>
+      <center><b><u>Example</u></b></center>
+      <p> <input type="button" onclick= "getData()" 
+                 value="Get text from Android EditText">
+      <p> Text from Android EditText is <input type="text" 
+                 id="androidEditTextContent" />
+    </body>
+</html>
+
+- How to execute JS method from java code.
+
+For example, we have this html code:
+
+<html>
+   <head>
+      <script language="javascript">
+         function startAlertInJS(value){
+            alert("JavaScript says: Text : " + value);
+         }
+      </script>
+   </head>
+   <body>
+      <center><b><u>Javascript</u></b></center>
+      <p> Empty WebView  </p>
+   </body>
+</html>
+
+Then we create this method in java part:
+
+privatevoidcallJSHelloMethod(String name){
+webView.loadUrl("javascript:startAlertInJS('" + name + "')"); }
+
+After this we can execute callJSHelloMethod().
+
+You may download a sample project from : link.
+
+Thanks for reading our article. We hope this information was helpful to you.
+
+Tags: Android JavaScript Webview
+Reference: WebView Interactions with JavaScript
+Similar posts:
+
+    Google Maps API for Android
+    Client side JavaScript: Knockout in practice
+    Accessing Field Configurations in JIRA for changing field description
+    A Guide for Upgrading to Ruby on Rails 4.2.0
+    Storing Your Data Securely on NFC Tags from Android
+    Additional means for data storage
+    Brand book producing guide
+
+
+    04-02-2019 Mubeen Riaz
+    Download link is not working. Please send me file or download link.
+    04-02-2019 Smithd278 http://edagbbdbffgefgad.blogspot.com/
+    Wow, wonderful blog layout! How long have you been blogging for? you made blogging look easy. The overall look of your web site is excellent, as well as the content! edagbbdbffgefgad
+    04-02-2019 Smitha125 http://edeecdefbakbdeef.blogspot.com/
+    Keep working ,fantastic job! edeecdefbakbdeef
+    04-02-2019 Fiman Taufik www.belajarngulik.net
+    if i have code in my html how can i change the var i to EditText or getExtra in Android Studio??
+    04-02-2019 Harshul sharma
+    Hi i have a question. i have a username textbox and password textbox in my webpage. I fetched my mobile number(acting as username) through android application and printed it to webpage username textbox(present in webview) . But i'm not able to use the username textbox value further in my webpage. can anyone teach me how to use the printed mobile number in username textbox further in my ASP.net webpage. please help! also i want to know that does JavascriptInterface methods only helps us to print values and not use them or save them in a Datatype.? or we can invoke any kind of method
+    04-02-2019 Conrad Bielicki
+    Thank you very much for the note on calling javascript with the loadUrl method! Saved me the trouble of going through a lot of documentation
+    04-02-2019 zam
+    cannot download sample code 
